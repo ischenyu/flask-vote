@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>投票网站</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/layui/2.5.6/css/layui.css">
+</head>
+<body>
+    <div class="layui-container">
+        <form class="layui-form" action="/vote" method="post">
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <input type="radio" name="option" value="1" title="选项1" lay-verify="required">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <input type="radio" name="option" value="2" title="选项2" lay-verify="required">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <input type="radio" name="option" value="3" title="选项3" lay-verify="required">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <button class="layui-btn layui-btn-normal" lay-submit lay-filter="form-vote">投票</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.staticfile.org/layui/2.5.6/layui.min.js"></script>
+    <script>
+        var form = layui.form;
+
+        // 监听表单提交事件
+        form.on('submit(form-vote)', function(data) {
+            // 发送POST请求
+            layui.$.ajax({
+                url: '/vote',
+                type: 'POST',
+                data: data.field,
+                success: function(res) {
+                    if (res.status === 'success') {
+                        layui.layer.msg('投票成功');
+                    } else {
+                        layui.layer.msg('投票失败');
+                    }
+                },
+                error: function() {
+                    layui.layer.msg('网络异常，请重试');
+                }
+            });
+            return false;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投票网站</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/layui/2.5.6/css/layui.css">
+    <style>
+        body {
+            padding: 20px;
+        }
+
+        .layui-container {
+            max-width: 600px; /* Adjust the max-width as needed */
+            margin: 0 auto;
+        }
+
+        .layui-input-block {
+            margin-bottom: 10px;
+        }
+
+        #result {
+            margin-top: 20px;
+        }
+
+        .vote-btn {
+            width: 20%;
+            margin-top: 20px;
+        }
+
+        .vote-result {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <i class="layui-icon layui-icon-github" style="font-size: 30px; color: #000000;"></i>
+    <div class="layui-container">
+        <h2>{{ question }}</h2>
+        <div class="layui-form">
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    {% for option in options %}
+                        <input type="radio" name="option" value="{{ option }}" title="{{ option }}">
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <div id="slider"></div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <button class="layui-btn vote-btn" id="voteBtn">投票</button>
+            </div>
+        </div>
+        <div class="vote-result" id="result"></div>
+    </div>
+
+    <script src="https://cdn.staticfile.org/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/layui/2.5.6/layui.all.js"></script>
+    <script>
+        // 引入必须的库和模块
+        layui.config({
+            base: 'static/'
+        }).use(['sliderVerify', 'jquery', 'form', 'layer'], function() {
+            var sliderVerify = layui.sliderVerify,
+                form = layui.form,
+                layer = layui.layer;
+
+            // 渲染滑块验证器
+            var slider = sliderVerify.render({
+                elem: '#slider',
+                onOk: function() {
+                    layer.msg('滑块验证通过');
+                }
+            });
+
+            // 监听投票按钮的点击事件
+            $('#voteBtn').click(function() {
+                // 获取选中的选项值
+                var option = $('input[name="option"]:checked').val();
+                if (!option) {
+                    layer.msg('请选择一个选项');
+                    return;
+                }
+
+                // 检查滑块验证是否通过
+                if (!slider.isOk()) {
+                    layer.msg('请先通过滑块验证');
+                    return;
+                }
+
+                // 发送 POST 请求进行投票
+                $.post('/vote', { option: option }, function(data) {
+                    if (data.success) {
+                        layer.msg('投票成功');
+                        loadVotes();
+                    } else {
+                        layer.msg(data.message);
+                    }
+                });
+            });
+
+            // 加载投票数据
+            function loadVotes() {
+                $.get('/get_votes', function(data) {
+                    var options = data.options;
+                    var total = data.total;
+                    var resultHtml = '<h2>投票结果：</h2>';
+                    for (var option in options) {
+                        var percentage = ((options[option] / total) * 100).toFixed(2);
+                        resultHtml += '<div>' + option + ': ' + options[option] + ' 票</div>';
+                        resultHtml += '<div class="layui-progress layui-progress-big" lay-showPercent="yes">';
+                        resultHtml += '  <div class="layui-progress-bar" lay-percent="' + percentage + '%" style="width: ' + percentage + '%;">';
+                        resultHtml += '    <span class="layui-progress-text">' + percentage + '%</span>';
+                        resultHtml += '  </div>';
+                        resultHtml += '</div>';
+                    }
+                    $('#result').html(resultHtml);
+                });
+            }
+
+            // 页面加载完成时加载投票数据
+            {% if voted %}
+                loadVotes();
+            {% endif %}
+        });
+    </script>
+</body>
+</html>
